@@ -1,63 +1,147 @@
-Gemini Powered CRM AI Query SystemTable of ContentsOverviewFeaturesHow It WorksTech StackProject StructurePrerequisitesSetup and InstallationRunning the ApplicationAPI EndpointsHealth CheckNatural Language QueryCreate Sample DataSecurity ConsiderationsFuture ImprovementsOverviewThe Gemini Powered CRM AI Query System is a FastAPI application that allows users to query a CRM database using natural language. It leverages Google's Gemini Large Language Model to translate natural language questions into SQL queries, execute them against a PostgreSQL database, and then generate a user-friendly natural language response based on the query results.This system is designed to make CRM data more accessible to non-technical users by abstracting away the complexities of SQL.FeaturesNatural Language Querying: Ask questions about your CRM data in plain English.AI-Powered SQL Generation: Uses Google Gemini to convert natural language to SQL.AI-Powered Response Generation: Summarizes SQL query results into natural language.Database Interaction: Connects to a PostgreSQL database to retrieve CRM data (Clients, Invoices, Payments).SQL Safety Validation: Basic checks to prevent harmful SQL queries and restrict access to application data tables only.RESTful API: Exposes endpoints for querying and managing sample data.Sample Data Generation: Endpoint to populate the database with sample data for testing.Asynchronous Operations: Utilizes async and await for non-blocking API calls.How It WorksUser Query: The user sends a natural language query (e.g., "Show me all unpaid invoices for Alpha Corp") to the API.SQL Generation: The application forwards the query and database schema information (limited to application tables) to the Google Gemini model, instructing it to generate an appropriate SQL query.SQL Validation: The generated SQL query undergoes a safety check to ensure it's a SELECT statement, doesn't contain obviously malicious keywords, and does not attempt to access system/metadata tables (like information_schema or pg_catalog).SQL Execution: If deemed safe, the SQL query is executed against the PostgreSQL database.Response Generation: The results from the database are sent back to the Gemini model, along with the original user query, to generate a conversational, natural language summary of the findings.API Response: The system returns a JSON response containing the original query, the generated SQL (if successful), the query results, the natural language summary, and execution time.Tech StackBackend Framework: FastAPIDatabase: PostgreSQLORM: SQLAlchemyAI Model: Google Gemini (via google-generativeai SDK)Data Validation: PydanticEnvironment Management: python-dotenvWeb Server: UvicornDatabase Driver: psycopg2-binaryProject Structuregemini_crm_ai_project/
+# Gemini Powered CRM AI Query System
+
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [How It Works](#how-it-works)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Setup and Installation](#setup-and-installation)
+- [Running the Application](#running-the-application)
+- [API Endpoints](#api-endpoints)
+  - [Health Check](#health-check)
+  - [Natural Language Query](#natural-language-query)
+  - [Create Sample Data](#create-sample-data)
+- [Security Considerations](#security-considerations)
+- [Future Improvements](#future-improvements)
+
+## Overview
+The Gemini Powered CRM AI Query System is a FastAPI application that allows users to query a CRM database using natural language. It leverages Google's Gemini Large Language Model to translate natural language questions into SQL queries, execute them against a PostgreSQL database, and then generate a user-friendly natural language response based on the query results.
+
+## Features
+- **Natural Language Querying**: Ask questions about your CRM data in plain English.
+- **AI-Powered SQL Generation**: Uses Google Gemini to convert natural language to SQL.
+- **AI-Powered Response Generation**: Summarizes SQL query results into natural language.
+- **Database Interaction**: Connects to a PostgreSQL database to retrieve CRM data (Clients, Invoices, Payments).
+- **SQL Safety Validation**: Basic checks to prevent harmful SQL queries.
+- **RESTful API**: Exposes endpoints for querying and managing sample data.
+- **Sample Data Generation**: Populates database with sample data for testing.
+- **Asynchronous Operations**: Uses async and await for non-blocking API calls.
+
+## How It Works
+1. **User Query**: A natural language query is sent to the API.
+2. **SQL Generation**: Gemini generates SQL using schema constraints.
+3. **SQL Validation**: SQL is checked for safety (e.g., only SELECT, no system tables).
+4. **SQL Execution**: Executes query against PostgreSQL.
+5. **Response Generation**: Gemini generates a summary of results.
+6. **API Response**: Returns JSON with query, SQL, results, and summary.
+
+## Tech Stack
+- **Backend Framework**: FastAPI
+- **Database**: PostgreSQL
+- **ORM**: SQLAlchemy
+- **AI Model**: Google Gemini (via `google-generativeai` SDK)
+- **Data Validation**: Pydantic
+- **Environment Management**: python-dotenv
+- **Web Server**: Uvicorn
+- **Database Driver**: psycopg2-binary
+
+## Project Structure
+```
+gemini_crm_ai_project/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py             # FastAPI app initialization, root/health routes
+│   ├── main.py
 │   ├── core/
 │   │   ├── __init__.py
-│   │   └── config.py       # Config, .env loading, DB session, Gemini setup
-│   ├── models.py           # SQLAlchemy database models
-│   ├── schemas.py          # Pydantic schemas for API request/response
-│   ├── ai_processor.py     # CRMQueryProcessor class (Gemini interaction logic)
+│   │   └── config.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── ai_processor.py
 │   └── api/
-│       ├── __init__.py
 │       └── v1/
-│           ├── __init__.py
-│           └── routes.py    # API v1 routes (query, sample-data)
-├── .env                    # Environment variables (DATABASE_URL, GOOGLE_API_KEY)
-└── requirements.txt        # Python package dependencies
-PrerequisitesPython 3.8+PostgreSQL server running and accessible.A Google API Key with access to the Gemini API.Setup and InstallationClone the Repository (or Create Project):If this project were in a Git repository:git clone <repository-url>
+│           └── routes.py
+├── .env
+└── requirements.txt
+```
+
+## Prerequisites
+- Python 3.8+
+- PostgreSQL
+- Google API Key with Gemini access
+
+## Setup and Installation
+```bash
+git clone <repository-url>
 cd gemini_crm_ai_project
-Alternatively, ensure you have the project files as generated by the provided scripts.Create and Activate a Virtual Environment:It's highly recommended to use a virtual environment:python -m venv venv
-# On Windows
-# .\venv\Scripts\activate
-# On macOS/Linux
+python -m venv venv
 source venv/bin/activate
-Install Dependencies:pip install -r requirements.txt
-Set Up Environment Variables:Create a .env file in the project root (gemini_crm_ai_project/) by copying the example or creating a new one.DATABASE_URL=postgresql://username:password@localhost:5432/crm_db
+pip install -r requirements.txt
+```
+Add a `.env` file:
+```env
+DATABASE_URL=postgresql://username:password@localhost:5432/crm_db
 GOOGLE_API_KEY=your_google_api_key_here
-Replace username, password, localhost, 5432, and crm_db with your actual PostgreSQL connection details. Ensure the database crm_db exists.Replace your_google_api_key_here with your valid Google API Key for Gemini.Database Schema:The application will attempt to create the necessary database tables (clients, invoices, payments) when it starts up, based on the SQLAlchemy models defined in app/models.py. For production environments, consider using a migration tool like Alembic.Running the ApplicationOnce the setup is complete, you can run the FastAPI application using Uvicorn:uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
---reload: Enables auto-reloading when code changes (useful for development).--host 0.0.0.0: Makes the server accessible from your local network.--port 8000: Specifies the port to run on.The API will be available at http://localhost:8000.API EndpointsThe API documentation (Swagger UI) is available at http://localhost:8000/docs and ReDoc at http://localhost:8000/redoc when the application is running.Health CheckEndpoint: GET /api/v1/healthDescription: Checks the health status of the application.Example curl:curl "http://localhost:8000/api/v1/health"
-Success Response (200 OK):{
-    "status": "healthy",
-    "timestamp": "YYYY-MM-DDTHH:MM:SS.ffffff"
+```
+
+## Running the Application
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## API Endpoints
+
+### Health Check
+**GET** `/api/v1/health`  
+**Response**
+```json
+{
+  "status": "healthy",
+  "timestamp": "YYYY-MM-DDTHH:MM:SS.ffffff"
 }
-Natural Language QueryEndpoint: POST /api/v1/query/natural-languageDescription: Processes a natural language query about CRM data.Request Body:{
-    "query": "Your natural language question here"
+```
+
+### Natural Language Query
+**POST** `/api/v1/query/natural-language`  
+**Request**
+```json
+{ "query": "Show me all unpaid invoices for Alpha Corp" }
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "query": "...",
+  "results": [...],
+  "sql_query": "...",
+  "response_text": "...",
+  "execution_time": 1.234
 }
-Example curl:curl -X POST "http://localhost:8000/api/v1/query/natural-language" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "Show me all unpaid invoices for Alpha Corp"}'
-Success Response (200 OK):{
-    "success": true,
-    "query": "Show me all unpaid invoices for Alpha Corp",
-    "results": [
-        // ... array of result dictionaries ...
-    ],
-    "sql_query": "SELECT ... FROM invoices JOIN clients ... WHERE ...",
-    "response_text": "Alpha Corp has X unpaid invoices totaling $Y...",
-    "execution_time": 1.2345
-}
-Error Response (e.g., if query processing fails):{
-    "success": false,
-    "query": "Show me all unpaid invoices for Alpha Corp",
-    "results": [],
-    "sql_query": "GENERATED_SQL_IF_ANY_BEFORE_ERROR",
-    "response_text": "Error processing query: Generated SQL contains unsafe operations.",
-    "execution_time": 0.5678
-}
-Create Sample DataEndpoint: POST /api/v1/sample-dataDescription: Populates the database with sample clients, invoices, and payments. Useful for testing and demonstration. It's designed to be idempotent (won't create duplicates if run multiple times based on current logic).Example curl:curl -X POST "http://localhost:8000/api/v1/sample-data"
-Success Response (200 OK):{
-    "message": "Sample data created successfully"
-    // Or "Sample data may already exist. Creation skipped to avoid duplicates."
-}
-Security ConsiderationsSQL Safety: The _is_safe_sql method in app/ai_processor.py provides basic protection against harmful SQL. It checks for disallowed keywords and ensures queries are SELECT statements and do not target system tables. The prompt to Gemini also heavily emphasizes generating safe, read-only queries on application tables only.Database Permissions: For enhanced security, the database user specified in DATABASE_URL should have the minimum necessary permissions (ideally, SELECT only on the application tables: clients, invoices, payments). It should not have permissions to information_schema or pg_catalog if possible.LLM Reliability: Large Language Models can sometimes make mistakes or generate unexpected content. While prompts are engineered for specific outputs, validation is crucial.API Key Security: Keep your GOOGLE_API_KEY confidential. Do not commit the .env file to version control if it contains sensitive keys. Use environment variables in production.Input Validation: Pydantic models are used for basic request validation. Further sanitization or validation of the natural language query input might be necessary depending on the deployment context.No Authentication: This example does not include user authentication or authorization. In a production system, API endpoints should be secured.Future ImprovementsDatabase Migrations: Implement Alembic for robust database schema management.Advanced SQL Validation/Parsing: Use a proper SQL parsing library for more sophisticated safety checks on the AI-generated SQL.Enhanced Intent Detection: Implement a more advanced pre-processing step to classify user intent and filter out queries that are out-of-scope or malicious before attempting SQL generation.User Authentication & Authorization: Secure the API endpoints.Comprehensive Testing: Add unit, integration, and end-to-end tests.Streaming Responses: For longer generations, consider streaming responses from the LLM.Contextual Conversations: Allow for follow-up questions that build on previous interactions.Rate Limiting: Protect the API and LLM usage from abuse.Detailed Logging: Implement more structured and detailed logging.
+```
+
+### Create Sample Data
+**POST** `/api/v1/sample-data`  
+**Response**
+```json
+{ "message": "Sample data created successfully" }
+```
+
+## Security Considerations
+- SQL safety validation: `_is_safe_sql` restricts access to app tables only.
+- Minimal DB user permissions.
+- Validate Gemini outputs.
+- Keep API keys secure.
+- Add authentication in production.
+
+## Future Improvements
+- Database migrations (Alembic)
+- Advanced SQL parsing
+- Intent detection
+- Auth & AuthZ
+- Streaming response
+- Contextual conversations
+- Rate limiting
+- Structured logging
+- Comprehensive testing
